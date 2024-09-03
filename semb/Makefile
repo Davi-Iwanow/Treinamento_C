@@ -1,27 +1,49 @@
+# Ferramentas do toolchain
+
 CC = arm-none-eabi-gcc
-CFLAGS = -g -mcpu=cortex-m4 -mthumb -Wall -O0
+RM = rm -rf
+PROG = blink
+# Diretorios arquivos objeto e de lista de dependencias serao salvos
+
 OBJDIR = build
-RM = rm -f
-DEPFLAGS = -MMD -MF $(DEPDIR)/$*.d #criar main.d e .deps
 DEPDIR = .deps
 
-#all: startup.o main.o
+# Arquivos a serem compilados
 
-SRC = $(wilcard *.c)
+SRCS = startup.c \
+        main.c
 
-OBJS = $(addprefix $(OBJDIR)/, $(addsuffix.o, $(basename $(SRC))))
-$(shell mkdir -p $(dir $(OBJS))> '/dev/null')
+#Flags do compilador e linker
 
-DEPS = $(patsubst %, $(DEPDIR)/%.d, $(basename $(SRC)))
-$(shell mkdir -p $(dir $(DEPS))> '/dev/null')
+CFLAGS = -g -mcpu=cortex-m4 -mthumb -Wall -O0
+DEPFLAGS = -MMD -MP -MF $(DEPDIR)/$*.d
+
+# Gera lista de arquivos objeto e cria diretorio onde serao salvos
+
+OBJS = $(patsubst %, $(OBJDIR)/%.o, $(basename $(SRCS)))
+$(shell mkdir -p $(dir $(OBJS)) > /dev/null)
+
+# Gera lista de arquivos de lista dependencia e cria diretorio onde serao salvos
+
+DEPS = $(patsubst %, $(DEPDIR)/%.d, $(basename $(SRCS)))
+$(shell mkdir -p $(dir $(DEPS)) > /dev/null)
 
 all: $(OBJS)
 
-$(OBJDIR)/ %.o: %.c $(DEPDIR)/%.d
-	$(CC) -c $(CFLAGS) $(DEPFLAGS)$< -o $@
+blink.elf: $(OBJS)
+
+
+$(OBJDIR)/%.o: %.c $(DEPDIR)/%.d
+	$(CC) -c $(CFLAGS) $(DEPFLAGS) $< -o $@
+
+# Cria um novo target para cada arquivo de dependencia possivel
 
 $(DEPS):
-include $(DEPS)
 
+# Inclui conteudo dos arquivos de dependencia
+
+-include $(DEPS)
+
+.PHONY: clean
 clean:
 	$(RM) $(OBJDIR) $(DEPDIR)
